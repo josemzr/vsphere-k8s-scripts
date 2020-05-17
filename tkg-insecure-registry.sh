@@ -146,9 +146,10 @@ done < "./ip-nodes-tkg"
 while read -r IPS_NODES_READ;
 do
 loginfo "Restarting Docker on node '"${IPS_NODES_READ}"'..."
-sshpass -e ssh -q -t root@"${SV_MASTER_IP}" ssh -i ./tkc-ssh-privatekey -t -q vmware-system-user@"${IPS_NODES_READ}" << EOF
+sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q -t root@"${SV_MASTER_IP}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./tkc-ssh-privatekey -t -q vmware-system-user@"${IPS_NODES_READ}" << EOF
 sudo -i
-systemctl restart docker
+systemctl stop docker
+systemctl start docker
 EOF
 if [ $? -eq 0 ] ;
 then  
