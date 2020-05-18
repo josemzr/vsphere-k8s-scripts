@@ -69,7 +69,7 @@ else
 fi
 
 #SSH into vCenter to get credentials for the supervisor cluster master VMs
-sshpass -p "${VC_ADMIN_PASSWORD}" ssh -t -q root@"${VC_IP}" com.vmware.shell /usr/lib/vmware-wcp/decryptK8Pwd.py > ./sv-cluster-creds 2>&1
+sshpass -p "${VC_ADMIN_PASSWORD}" ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q root@"${VC_IP}" com.vmware.shell /usr/lib/vmware-wcp/decryptK8Pwd.py > ./sv-cluster-creds 2>&1
 if [ $? -eq 0 ] ;
 then      
       loginfo "Connecting to the vCenter to get the supervisor cluster VM credentials..."
