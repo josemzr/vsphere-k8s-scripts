@@ -25,7 +25,7 @@ loginfo() { echo "$(date) INFO: $@" ;}
 
 # Verify if required arguments are met
 
-if [[ -z "$1" || -z "$2" || -z "$3" ]]
+if [[ -z "$1" || -z "$2" ]]
   then
     logerr "Invalid arguments. Exiting..."
     exit 2
