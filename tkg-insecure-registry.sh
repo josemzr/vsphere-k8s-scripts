@@ -9,14 +9,137 @@
 # Author: José Manzaneque (jmanzaneque@vmware.com)
 # Dependencies: curl, jq, sshpass
 
-SV_IP='192.168.40.129' #VIP for the Supervisor Cluster
-VC_IP='vcsa.pacific.local' #URL for the vCenter
-VC_ADMIN_USER='administrator@vsphere.local' #User for the Supervisor Cluster
-VC_ADMIN_PASSWORD='VMware1!' #Password for the Supervisor Cluster user
+##############################################################################
+################## Help message #############################################
+##############################################################################
+usage()
+{
+    echo "Usage: [FILE]... [Interactive] 
 
-TKG_CLUSTER_NAME=$1 # Name of the TKG cluster
-TKG_CLUSTER_NAMESPACE=$2 # Namespace where the TKG cluster is deployed
-URL_REGISTRY=$3 # URL of the Registry to be added 
+Mandatory arguments 
+        -c, --tkg_cluster_name            guest_cluster_name
+        -n, --tkg_cluster_namespace       guest_cluster_namespace
+        -r, --url_registry                
+        --vc_root_password
+        --vc_admin_passowrd
+        --vc_admin_user
+        --vc_ip
+        --sv_ip
+        -h, --help                        show help.
+        
+        Example:
+        ./tkg-insecure-registry.sh -c \${cluster_name} -n \${namespace} -r \${url_registry} --vc_admin_passowrd \${admin_pass} --vc_admin_user \${admin_user} --vc_ip \${vc_ip} --sv_ip \${supervisor_cliuster_ip} --vc_root_password \${root_pass}"
+}
+
+SV_IP=''  #'192.168.40.129' #VIP for the Supervisor Cluster
+VC_IP='' #URL for the vCenter
+VC_ADMIN_USER='' #'administrator@vsphere.local' #User for the Supervisor Cluster
+VC_ADMIN_PASSWORD="" #'VMware1!' #Password for the Supervisor Cluster user
+VC_ROOT_PASSWORD=""
+TKG_CLUSTER_NAME="" # Name of the TKG cluster
+TKG_CLUSTER_NAMESPACE="" # Namespace where the TKG cluster is deployed
+URL_REGISTRY="" # URL of the Registry to be added 
+
+# Check if parameter value is empty.
+check_if_value_exist()
+{
+    current_param=$1
+    if [ "$current_param" = "" ]
+        then 
+        echo "parameter cannot be empty"
+        exit 1
+    fi
+}
+
+
+check_if_any_argument_supplied()
+{
+    if [ "$#" -eq 0 ]
+        then
+        usage
+        exit 1
+    fi
+}
+
+
+print_current_arg()
+{
+      echo "Debug $1: $2"
+}
+
+define_arguments()
+{
+    check_if_any_argument_supplied $@   
+
+    while [ "$#" -gt 0 ]; do
+    # while [ "x$1" != "x" ]; do
+    # while [ "$1" != "" ]; do
+        case $1 in
+            -c | --tkg_cluster_name ) shift
+                check_if_value_exist $1
+                TKG_CLUSTER_NAME=$1
+                print_current_arg "TKG_CLUSTER_NAME" $1
+                ;;
+            -n | --tkg_cluster_namespace ) shift 
+                check_if_value_exist $1 
+                TKG_CLUSTER_NAMESPACE=$1
+                print_current_arg "TKG_CLUSTER_NAMESPACE" $1
+                ;;
+            -r | --url_registry ) shift 
+                check_if_value_exist $1 
+                URL_REGISTRY=$1
+                print_current_arg "URL_REGISTRY" $1
+                ;;
+            --vc_admin_passowrd ) shift 
+                check_if_value_exist $1 
+                VC_ADMIN_PASSWORD=$1
+                ;;
+            --vc_root_password ) shift 
+                check_if_value_exist $1 
+                VC_ROOT_PASSWORD=$1
+                ;;
+            --vc_admin_user ) shift 
+                check_if_value_exist $1 
+                VC_ADMIN_USER=$1
+                print_current_arg "VC_ADMIN_USER" $1
+                ;;
+            --vc_ip ) shift 
+                check_if_value_exist $1 
+                VC_IP=$1
+                print_current_arg "VC_IP" $1
+                ;;
+            --sv_ip ) shift 
+                check_if_value_exist $1 
+                SV_IP=$1
+                print_current_arg "SV_IP" $1
+                ;;
+            -h | --help )        
+                usage
+                exit
+                ;;
+            * ) 
+                usage
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
+#     check_if_argument_exist
+}
+##############################################################################
+##############################################################################
+##############################################################################
+
+define_arguments $@
+# SV_IP='192.168.40.129' #VIP for the Supervisor Cluster
+# VC_IP='vcsa.pacific.local' #URL for the vCenter
+# VC_ADMIN_USER='administrator@vsphere.local' #User for the Supervisor Cluster
+# VC_ADMIN_PASSWORD='VMware1!' #Password for the Supervisor Cluster user
+
+# TKG_CLUSTER_NAME=$1 # Name of the TKG cluster
+# TKG_CLUSTER_NAMESPACE=$2 # Namespace where the TKG cluster is deployed
+# URL_REGISTRY=$3 # URL of the Registry to be added 
 URL_REGISTRY_TRIM=$(echo "${URL_REGISTRY}" | sed 's~http[s]*://~~g') # Sanitize registry URL to remove http/https
 
 # Logging function that will redirect to stderr with timestamp:
@@ -69,7 +192,7 @@ else
 fi
 
 #SSH into vCenter to get credentials for the supervisor cluster master VMs
-sshpass -p "${VC_ADMIN_PASSWORD}" ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q root@"${VC_IP}" com.vmware.shell /usr/lib/vmware-wcp/decryptK8Pwd.py > ./sv-cluster-creds 2>&1
+sshpass -p "${VC_ROOT_PASSWORD}" ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -q root@"${VC_IP}" com.vmware.shell /usr/lib/vmware-wcp/decryptK8Pwd.py > ./sv-cluster-creds 2>&1
 if [ $? -eq 0 ] ;
 then      
       loginfo "Connecting to the vCenter to get the supervisor cluster VM credentials..."
