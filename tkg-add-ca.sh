@@ -4,7 +4,8 @@
 # cluster. After adding the CA, it will restart
 # the Docker daemon in every node.
 #
-# USAGE: tkg-add-ca.sh $name-cluster $namespace $cafile
+# USAGE: tkg-add-ca.sh $name-cluster $vsphere-namespace $cafile
+# EXAMPLE: ./tkg-add-ca.sh tkg-cluster-1 test-namespace /home/vmware/ca.crt
 # 
 # Author: José Manzaneque (jmanzaneque@vmware.com)
 # Dependencies: curl, jq
