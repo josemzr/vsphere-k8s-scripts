@@ -10,19 +10,29 @@
 # Author: José Manzaneque (jmanzaneque@vmware.com)
 # Dependencies: curl, jq
 
-SV_IP='192.168.180.129' #VIP for the Supervisor Cluster
-VC_ADMIN_USER='administrator@vsphere.local' #User for the Supervisor Cluster
-VC_ADMIN_PASSWORD='VMware1!' #Password for the Supervisor Cluster user
-VC_ROOT_PASSWORD='VMware1!' #Password for the root VCSA user
+SV_IP="$1"  #VIP for the Supervisor Cluster
+VC_ADMIN_USER="$2" #'administrator@vsphere.local' #User for the Supervisor Cluster
+VC_ADMIN_PASSWORD="$3" #Password for the Supervisor Cluster user
+VC_ROOT_PASSWORD="$4" #Password for the root VCSA user
 
-TKG_CLUSTER_NAME=$1 # Name of the TKG cluster
-TKG_CLUSTER_NAMESPACE=$2 # Namespace where the TKG cluster is deployed
-CA_FILE=$3 # Path for the CA file to be transferred
+TKG_CLUSTER_NAME="$5" # Name of the TKG cluster
+TKG_CLUSTER_NAMESPACE="$6" # Namespace where the TKG cluster is deployed
+CA_FILE="$7" # Path for the CA file to be transferred
 
 # Logging function that will redirect to stderr with timestamp:
 logerr() { echo "$(date) ERROR: $@" 1>&2; }
 # Logging function that will redirect to stdout with timestamp
 loginfo() { echo "$(date) INFO: $@" ;}
+
+
+loginfo "SV_IP:$SV_IP"
+loginfo "VC_ADMIN_USER:$VC_ADMIN_USER"
+loginfo "VC_ADMIN_PASSWORD:$VC_ADMIN_PASSWORD"
+loginfo "VC_ROOT_PASSWORD:$VC_ROOT_PASSWORD"
+loginfo "TKG_CLUSTER_NAME:$TKG_CLUSTER_NAME"
+loginfo "TKG_CLUSTER_NAMESPACE:$TKG_CLUSTER_NAMESPACE"
+loginfo "CA_FILE:$CA_FILE"
+
 
 # Verify if required arguments are met
 
@@ -47,6 +57,9 @@ TKC_API=$(curl -XPOST -s -u "${VC_ADMIN_USER}":"${VC_ADMIN_PASSWORD}" https://"$
 TOKEN=$(curl -XPOST -s -u "${VC_ADMIN_USER}":"${VC_ADMIN_PASSWORD}" https://"${SV_IP}":443/wcp/login -k -d '{"guest_cluster_name":"'"${TKG_CLUSTER_NAME}"'", "guest_cluster_namespace":"'"${TKG_CLUSTER_NAMESPACE}"'"}' -H "Content-Type: application/json" | jq -r '.session_id')
 # I'm sure there is a better way to store the JSON in two variables in a single pipe execution. But I can't be bothered to search on StackOverflow right now.
 
+
+
+##################################################################################################################################
 # Verify if the token is valid
 if [ $(curl -k -s -o /dev/null -w "%{http_code}" https://"${TKC_API}":6443/ --header "Authorization: Bearer "${TOKEN}"") -ne "200" ]
 then
@@ -97,6 +110,7 @@ else
       exit 2
 fi
 
+########################################################################################################
 # SSH to every node and transfer the CA
 
 while read -r IPS_NODES_READ;
